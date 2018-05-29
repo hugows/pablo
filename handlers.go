@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"time"
 
-	"github.com/kr/pretty"
 	"github.com/labstack/echo"
 )
 
@@ -42,6 +42,8 @@ func (s *Server) handleUserPost(c echo.Context) error {
 	msgBody := ""
 	m := fields.(map[string]interface{})
 
+	output := make(map[string]interface{})
+
 	for k, v := range m {
 		switch vv := v.(type) {
 		// case string:
@@ -49,12 +51,14 @@ func (s *Server) handleUserPost(c echo.Context) error {
 		// case bool:
 		// 	msgBody += fmt.Sprintf("\n%s is boolean %v", k, vv)
 		case float64:
+			output[k] = vv
 			if _, ok := s.streams[uri].varMap[k]; !ok {
 				fmt.Printf(" NEW VAR %s\n", k)
 				if s.streams[uri].varMap == nil {
 					s.streams[uri].varMap = make(map[string]string)
 				}
 				s.streams[uri].varMap[k] = "float64"
+
 			}
 			msgBody += fmt.Sprintf("\n%s is float64 %f", k, vv)
 		default:
@@ -83,9 +87,19 @@ func (s *Server) handleUserPost(c echo.Context) error {
 
 	}
 
-	pretty.Print(s.streams)
-	pretty.Print(s.charts)
+	// pretty.Print(s.streams)
+	// pretty.Print(s.charts)
 
-	// s.ws.Broadcast([]byte(msg))
+	output["_timestamp"] = time.Now()
+	output["_uri"] = uri
+
+	// pretty.Print(output)
+
+	msg, err := json.Marshal(output)
+	if err != nil {
+		panic(err)
+	}
+
+	s.ws.Broadcast(msg)
 	return nil
 }

@@ -1,0 +1,22 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "hyperapp-scripts",
+    "build": "hyperapp-scripts build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "^2.7.2",
+    "hyperapp": "^1.2.5",
+    "moment": "^2.22.1"
+  },
+  "devDependencies": {
+    "cra-hyperapp": "0.0.5"
+  }
+}

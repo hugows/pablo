@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/labstack/echo"
-	"github.com/pkg/browser"
 	"gopkg.in/olahol/melody.v1"
 )
 
@@ -17,15 +14,18 @@ type Server struct {
 }
 
 func main() {
+	e := echo.New()
+	e.Debug = true
+
 	s := Server{
-		router: echo.New(),
+		router: e,
 		ws:     melody.New(),
 	}
 
 	s.setup()
 
-	url := fmt.Sprintf("http://localhost%s", serverAddr)
-	browser.OpenURL(url)
+	// url := fmt.Sprintf("http://localhost%s", serverAddr)
+	// browser.OpenURL(url)
 
 	s.start(serverAddr)
 }

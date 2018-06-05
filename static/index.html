@@ -1,52 +1,141 @@
 <html>
-  <head>
-    <title>Melody example: chatting</title>
-    <link rel="icon" type="image/png" href="___INTERNAL/static/favicon.png" />
-    <script src="___INTERNAL/static/app.js"></script>
-  </head>
 
-  <style>
-    #chat {
-      text-align: left;
-      background: #f1f1f1;
-      width: 800px;
-      min-height: 500px;
-      padding: 20px;
-    }
-  </style>
+<head>
+  <title>Melody example: chatting</title>
+  <link rel="icon" type="image/png" href="___INTERNAL/static/favicon.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+  <script src="//unpkg.com/mithril/mithril.js"></script>
+  <!-- <script src="___INTERNAL/static/app.js"></script> -->
+</head>
 
-  <body>
-    <center>
-      <h3>Chat</h3>
-      <pre id="chat"></pre>
-      <input placeholder="say something" id="text" type="text">
-    </center>
+<body>
+  <center>
+    <h3>Chat</h3>
+  </center>
 
-    <script>
-      var url = "ws://" + window.location.host + "/___INTERNAL/ws";
-      var ws = new WebSocket(url);
-      var name = "Guest" + Math.floor(Math.random() * 1000);
+  <script>
+    var url = "ws://" + window.location.host + "/___INTERNAL/ws";
+    var ws = new WebSocket(url);
+    var root = document.body
 
-      var chat = document.getElementById("chat");
-      var text = document.getElementById("text");
+    var now = function () {
+      var iso = new Date().toISOString();
+      return iso.split("T")[1].split(".")[0];
+    };
 
-      var now = function () {
-        var iso = new Date().toISOString();
-        return iso.split("T")[1].split(".")[0];
-      };
-
-      ws.onmessage = function (msg) {
-        var line =  now() + " " + msg.data + "\n";
-        chat.innerText += line;
-      };
-
-      text.onkeydown = function (e) {
-        if (e.keyCode === 13 && text.value !== "") {
-          ws.send("<" + name + "> " + text.value);
-          text.value = "";
+    var chartConfig = {
+      type: 'bar',
+      data: {
+        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+        datasets: [{
+          label: '# of Votes',
+          data: [12, 19, 3, 5, 2, 3],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(255, 159, 64, 0.2)'
+          ],
+          borderColor: [
+            'rgba(255,99,132,1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              beginAtZero: true
+            }
+          }]
         }
-      };
+      }
+    };
 
-    </script>
-  </body>
+    var state = {
+      chartIdx: 0,
+      charts: [],
+      maxItems: 500,
+      allMsgs: [],
+      appendMsg: function (m) {
+        state.allMsgs.push(m);
+        state.allMsgs.splice(0, state.allMsgs.length - state.maxItems);
+      }
+    }
+
+    var ChartInstance = {
+      oncreate: function (vnode) {
+        // const model = vnode.attrs.model;
+        // const ctx = vnode.dom.getContext('2d');
+        // model.instance = new Chart(ctx, chartConfig);
+      },
+      view: function (vnode) {
+        let model = vnode.attrs.model;
+        // const model = vnode.attrs.model;
+        return m("#canvas-holder", { style: { width: 300 } }, [
+          m('canvas#chart-area', {
+            oncreate(vnode) {
+              const ctx = vnode.dom.getContext('2d');
+              model = model | {}
+              model.instance = new Chart(ctx, chartConfig);
+            }
+          })
+        ]);
+      }
+    }
+
+
+    var LogBox = {
+      view: function () {
+        return m(".message-list", state.allMsgs.map(function (l) {
+          return m(".message-item", { key: l.data._timestamp }, l.data);
+        }))
+      }
+    }
+
+    var ChartWrapper = {
+      addChart: function () {
+        state.charts.push([state.chartIdx])
+        state.chartIdx++
+      },
+      view: function () {
+        var children = [m("button", { onclick: this.addChart }, "New chart")]
+        state.charts.forEach(c => {
+          children.push(m(ChartInstance, {}, c))
+        });
+
+        return m(".chart-wrapper", children)
+      }
+    }
+
+    var Outer = {
+      view: function (vnode) {
+        return m("div", { class: "wrapper" }, vnode.children)
+      }
+    }
+
+    ws.onmessage = function (msg) {
+      state.appendMsg(msg)
+      m.redraw()
+    };
+
+    m.mount(root, {
+      view: function () {
+        return m(Outer, [
+          m(ChartWrapper),
+          m(LogBox)
+        ])
+      }
+    })
+  </script>
+</body>
+
 </html>

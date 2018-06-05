@@ -14,6 +14,7 @@ import (
 func (s *Server) setup() {
 	// Middlewares
 	s.router.Pre(middleware.RemoveTrailingSlash())
+	// s.router.Use(middleware.Logger())
 	s.router.Use(middleware.Recover())
 
 	// Packr is used so we can deliver a single binary to the end user

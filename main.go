@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+
+	"github.com/getlantern/systray"
 	"github.com/labstack/echo"
-	"gopkg.in/olahol/melody.v1"
+	"github.com/skratchdot/open-golang/open"
+	melody "gopkg.in/olahol/melody.v1"
 )
 
 const serverAddr = ":5000"
@@ -13,7 +17,7 @@ type Server struct {
 	router *echo.Echo
 }
 
-func main() {
+func startServer() {
 	e := echo.New()
 	e.Debug = true
 
@@ -23,9 +27,86 @@ func main() {
 	}
 
 	s.setup()
-
-	// url := fmt.Sprintf("http://localhost%s", serverAddr)
-	// browser.OpenURL(url)
-
 	s.start(serverAddr)
+}
+
+func main() {
+	onExit := func() {
+		fmt.Println("Starting onExit")
+		// now := time.Now()
+		// ioutil.WriteFile(fmt.Sprintf(`on_exit_%d.txt`, now.UnixNano()), []byte(now.String()), 0644)
+		fmt.Println("Finished onExit")
+	}
+
+	// Start server in another goroutine
+	go startServer()
+
+	// Should be called at the very beginning of main().
+	systray.Run(onReady, onExit)
+}
+
+func onReady() {
+
+	systray.SetIcon(ICON_DATA)
+	systray.SetTitle("Awesome App")
+	systray.SetTooltip("Lantern")
+	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+	go func() {
+		<-mQuitOrig.ClickedCh
+		fmt.Println("Requesting quit")
+		systray.Quit()
+		fmt.Println("Finished quitting")
+	}()
+
+	// We can manipulate the systray in other goroutines
+	go func() {
+		systray.SetIcon(ICON_DATA)
+		systray.SetTitle("Awesome App")
+		systray.SetTooltip("Pretty awesome棒棒嗒")
+		mChange := systray.AddMenuItem("Change Me", "Change Me")
+		mChecked := systray.AddMenuItem("Unchecked", "Check Me")
+		mEnabled := systray.AddMenuItem("Enabled", "Enabled")
+		systray.AddMenuItem("Ignored", "Ignored")
+
+		mUrl := systray.AddMenuItem("Open app", "Open chrome")
+		mQuit := systray.AddMenuItem("退出", "Quit the whole app")
+		systray.AddSeparator()
+		mToggle := systray.AddMenuItem("Toggle", "Toggle the Quit button")
+		shown := true
+		// open.Run(
+		for {
+			select {
+			case <-mChange.ClickedCh:
+				mChange.SetTitle("I've Changed")
+			case <-mChecked.ClickedCh:
+				if mChecked.Checked() {
+					mChecked.Uncheck()
+					mChecked.SetTitle("Unchecked")
+				} else {
+					mChecked.Check()
+					mChecked.SetTitle("Checked")
+				}
+			case <-mEnabled.ClickedCh:
+				mEnabled.SetTitle("Disabled")
+				mEnabled.Disable()
+			case <-mUrl.ClickedCh:
+				url := fmt.Sprintf("http://localhost%s", serverAddr)
+				open.Run(url)
+			case <-mToggle.ClickedCh:
+				if shown {
+					mQuitOrig.Hide()
+					mEnabled.Hide()
+					shown = false
+				} else {
+					mQuitOrig.Show()
+					mEnabled.Show()
+					shown = true
+				}
+			case <-mQuit.ClickedCh:
+				systray.Quit()
+				fmt.Println("Quit2 now...")
+				return
+			}
+		}
+	}()
 }

@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gobuffalo/packr"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
+
+const STATIC_DIR = "./static"
 
 func (s *Server) setup() {
 	// Middlewares
@@ -18,7 +19,13 @@ func (s *Server) setup() {
 	s.router.Use(middleware.Recover())
 
 	// Packr is used so we can deliver a single binary to the end user
-	assetHandler := http.FileServer(packr.NewBox("./static"))
+	var fs http.FileSystem
+	// if true {
+	fs = http.Dir(STATIC_DIR)
+	// } else {
+	// 	fs = packr.NewBox(STATIC_DIR)
+	// }
+	assetHandler := http.FileServer(fs)
 
 	// Serve index.html
 	s.router.GET("/", echo.WrapHandler(assetHandler))
@@ -72,5 +79,6 @@ func (s *Server) setup() {
 
 func (s *Server) start(addr string) {
 	s.router.HideBanner = true
+	s.router.HidePort = true
 	s.router.Logger.Fatal(s.router.Start(addr))
 }

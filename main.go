@@ -45,66 +45,29 @@ func main() {
 	systray.Run(onReady, onExit)
 }
 
+func openURL() {
+	url := fmt.Sprintf("http://localhost%s", serverAddr)
+	open.Run(url)
+}
+
 func onReady() {
 
 	systray.SetIcon(ICON_DATA)
-	systray.SetTitle("Awesome App")
-	systray.SetTooltip("Lantern")
-	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
-	go func() {
-		<-mQuitOrig.ClickedCh
-		fmt.Println("Requesting quit")
-		systray.Quit()
-		fmt.Println("Finished quitting")
-	}()
+	info := "pablo is running on port " + serverAddr
+	systray.SetTitle(info)
+	systray.SetTooltip(info)
 
-	// We can manipulate the systray in other goroutines
-	go func() {
-		systray.SetIcon(ICON_DATA)
-		systray.SetTitle("Awesome App")
-		systray.SetTooltip("Pretty awesome棒棒嗒")
-		mChange := systray.AddMenuItem("Change Me", "Change Me")
-		mChecked := systray.AddMenuItem("Unchecked", "Check Me")
-		mEnabled := systray.AddMenuItem("Enabled", "Enabled")
-		systray.AddMenuItem("Ignored", "Ignored")
+	menuOpen := systray.AddMenuItem("Open Pablo...", "Running on port "+serverAddr)
+	systray.AddSeparator()
+	menuQuit := systray.AddMenuItem("Exit", "Quit the whole app")
 
-		mUrl := systray.AddMenuItem("Open app", "Open chrome")
-		mQuit := systray.AddMenuItem("退出", "Quit the whole app")
-		systray.AddSeparator()
-		mToggle := systray.AddMenuItem("Toggle", "Toggle the Quit button")
-		shown := true
-		// open.Run(
+	go func() {
 		for {
 			select {
-			case <-mChange.ClickedCh:
-				mChange.SetTitle("I've Changed")
-			case <-mChecked.ClickedCh:
-				if mChecked.Checked() {
-					mChecked.Uncheck()
-					mChecked.SetTitle("Unchecked")
-				} else {
-					mChecked.Check()
-					mChecked.SetTitle("Checked")
-				}
-			case <-mEnabled.ClickedCh:
-				mEnabled.SetTitle("Disabled")
-				mEnabled.Disable()
-			case <-mUrl.ClickedCh:
-				url := fmt.Sprintf("http://localhost%s", serverAddr)
-				open.Run(url)
-			case <-mToggle.ClickedCh:
-				if shown {
-					mQuitOrig.Hide()
-					mEnabled.Hide()
-					shown = false
-				} else {
-					mQuitOrig.Show()
-					mEnabled.Show()
-					shown = true
-				}
-			case <-mQuit.ClickedCh:
+			case <-menuOpen.ClickedCh:
+				openURL()
+			case <-menuQuit.ClickedCh:
 				systray.Quit()
-				fmt.Println("Quit2 now...")
 				return
 			}
 		}

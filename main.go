@@ -54,16 +54,21 @@ func onReady() {
 
 	systray.SetIcon(ICON_DATA)
 	info := "pablo is running on port " + serverAddr
-	systray.SetTitle(info)
 	systray.SetTooltip(info)
 
 	menuOpen := systray.AddMenuItem("Open Pablo...", "Running on port "+serverAddr)
 	systray.AddSeparator()
 	menuQuit := systray.AddMenuItem("Exit", "Quit the whole app")
 
+	balloonClicked := systray.BalloonNotifyChan()
+
+	systray.ShowBalloon("Pablo is running on port "+serverAddr, "Click to open your browser")
+
 	go func() {
 		for {
 			select {
+			case <-balloonClicked:
+				openURL()
 			case <-menuOpen.ClickedCh:
 				openURL()
 			case <-menuQuit.ClickedCh:

@@ -10,22 +10,13 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-const STATIC_DIR = "./static"
-
 func (s *Server) setup() {
 	// Middlewares
 	s.router.Pre(middleware.RemoveTrailingSlash())
 	// s.router.Use(middleware.Logger())
 	s.router.Use(middleware.Recover())
 
-	// Packr is used so we can deliver a single binary to the end user
-	var fs http.FileSystem
-	// if true {
-	fs = http.Dir(STATIC_DIR)
-	// } else {
-	// 	fs = packr.NewBox(STATIC_DIR)
-	// }
-	assetHandler := http.FileServer(fs)
+	assetHandler := getAssetHandler()
 
 	// Serve index.html
 	s.router.GET("/", echo.WrapHandler(assetHandler))
